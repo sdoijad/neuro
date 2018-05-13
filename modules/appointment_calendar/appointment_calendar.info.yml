@@ -1,0 +1,16 @@
+name: Appointment Calendar
+description: Creates Appointment Calendar for Timeslot Booking
+# core: 8.x
+package: Calendar
+type: module
+configure: appointment_calendar.list_page
+dependencies:
+  - datetime
+  - datetime_range
+
+
+# Information added by Drupal.org packaging script on 2017-03-08
+version: '8.x-1.2'
+core: '8.x'
+project: 'appointment_calendar'
+datestamp: 1488953586

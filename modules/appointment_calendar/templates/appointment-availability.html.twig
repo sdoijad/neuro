@@ -1,0 +1,13 @@
+Selected Date: <h2><div> {{selected_date|date("jS F, Y ")}} </div></h2>
+<table>
+    {% for key,value in values %}
+        <tr>
+            <td>{{key}}</td>
+            {% if value == 'Available' %}
+                <td><span class ="available"  style="color: #00ff47;">{{value}}</span></td>
+            {% elseif value == 'Booked' %}
+                <td><span class ="booked"  style="color: red;">{{value}}</span></td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+</table>
