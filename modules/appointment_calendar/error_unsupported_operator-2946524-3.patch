@@ -1,0 +1,239 @@
+diff --git a/appointment_calendar.links.action.yml b/appointment_calendar.links.action.yml
+index 602e03e..57b9bf3 100644
+--- a/appointment_calendar.links.action.yml
++++ b/appointment_calendar.links.action.yml
+@@ -32,4 +32,10 @@ appointment_calendar.delete_subscribers:
+   route_name: appointment_calendar.subscribers
+   title: 'Add Appointment Calendar'
+   appears_on:
+-    - appointment_calendar.delete
+\ No newline at end of file
++    - appointment_calendar.delete
++    
++appointment_calendar.view_page:
++  route_name: appointment_calendar.list_page
++  title: 'Go to listing page'
++  appears_on:
++    - appointment_calendar.view
+diff --git a/src/Form/AppointmentCalendarDeleteForm.php b/src/Form/AppointmentCalendarDeleteForm.php
+index e8d2631..d453355 100644
+--- a/src/Form/AppointmentCalendarDeleteForm.php
++++ b/src/Form/AppointmentCalendarDeleteForm.php
+@@ -2,11 +2,8 @@
+ 
+ namespace Drupal\appointment_calendar\Form;
+ 
+-use Drupal\Component\Utility\Html;
+-use Drupal\Core\Datetime\DrupalDateTime;
+ use Drupal\Core\Form\FormBase;
+ use Drupal\Core\Form\FormStateInterface;
+-use Drupal\Core\Render\Markup;
+ 
+ class AppointmentCalendarDeleteForm extends FormBase {
+ 
+@@ -33,8 +30,8 @@ class AppointmentCalendarDeleteForm extends FormBase {
+       $delete_result = $delete_query->execute()->fetchAll();
+       if (count($delete_result) >= 1) {
+         $form['date'] = array(
+-          '#markup' => 'Unable to delete ' . $date .
+-          '. Appointment already booked in selected date<br>If you still want to delete the selected date, delete timeslots booked and retry<br> ',
++          '#markup' => $this->t('Unable to delete ' . $date .
++          '. Appointment already booked in selected date<br>If you still want to delete the selected date, delete timeslots booked and retry<br> '),
+         );
+         $form['return'] = array(
+           '#type' => 'submit',
+@@ -43,7 +40,7 @@ class AppointmentCalendarDeleteForm extends FormBase {
+       }
+       else {
+         $form['date_markup'] = array(
+-          '#markup' => t('Are you sure to delete <b>:date</b>?<br>Note:All filled timeslots also will be deleted.<br>', array(':date' => $date)),
++          '#markup' => $this->t('Are you sure to delete <b>:date</b>?<br>Note:All filled timeslots also will be deleted.<br>', array(':date' => $date)),
+         );
+         $form['date'] = array(
+           '#type' => 'hidden',
+@@ -51,11 +48,11 @@ class AppointmentCalendarDeleteForm extends FormBase {
+         );
+         $form['delete'] = array(
+           '#type' => 'submit',
+-          '#value' => t('Yes'),
++          '#value' => $this->t('Yes'),
+         );
+         $form['no'] = array(
+           '#type' => 'submit',
+-          '#value' => t('No'),
++          '#value' => $this->t('No'),
+         );
+       }
+       return $form;
+@@ -79,8 +76,8 @@ class AppointmentCalendarDeleteForm extends FormBase {
+     // Delete Slot.
+     if ($op == $this->t('Yes')) {
+       $db_conn->delete('appointment_date')
+-          ->condition('date', $values['date'])
+-          ->execute();
++        ->condition('date', $values['date'])
++        ->execute();
+       drupal_set_message(t('Selected Date deleted successfully'));
+       $form_state->setRedirect('appointment_calendar.list_page');
+     }
+diff --git a/src/Form/AppointmentCalendarEditForm.php b/src/Form/AppointmentCalendarEditForm.php
+index 9a0e27a..907c98e 100644
+--- a/src/Form/AppointmentCalendarEditForm.php
++++ b/src/Form/AppointmentCalendarEditForm.php
+@@ -6,7 +6,6 @@ use Drupal\Component\Utility\Html;
+ use Drupal\Core\Datetime\DrupalDateTime;
+ use Drupal\Core\Form\FormBase;
+ use Drupal\Core\Form\FormStateInterface;
+-use Drupal\Core\Render\Markup;
+ 
+ class AppointmentCalendarEditForm extends FormBase {
+ 
+@@ -21,15 +20,12 @@ class AppointmentCalendarEditForm extends FormBase {
+    * {@inheritdoc}
+    */
+   public function buildForm(array $form, FormStateInterface $form_state) {
+-    global $base_url;
+-    // Default year.
+-    $default_year = date('Y', time());
+     $from_date = \Drupal::request()->query->get('date');
+     // Date edit page.
+     if ($from_date != '') {
+       $form['appointment_slot_date'] = array(
+         '#type' => 'datetime',
+-        '#title' => 'Date',
++        '#title' => $this->t('Date'),
+         '#date_date_element' => 'date',
+         '#date_time_element' => 'none',
+         '#default_value' => DrupalDateTime::createFromTimestamp($from_date),
+@@ -64,7 +60,7 @@ class AppointmentCalendarEditForm extends FormBase {
+       }
+       $form['appointment_slot'] = array(
+         '#type' => 'textfield',
+-        '#title' => 'No of Extra Slots:',
++        '#title' => $this->t('No of Extra Slots:'),
+       );
+       $values = $form_state->getValues();
+       // Display Extra slots.
+diff --git a/src/Form/AppointmentCalendarForm.php b/src/Form/AppointmentCalendarForm.php
+index 74aeabc..3698714 100644
+--- a/src/Form/AppointmentCalendarForm.php
++++ b/src/Form/AppointmentCalendarForm.php
+@@ -23,7 +23,7 @@ class AppointmentCalendarForm extends FormBase {
+     $default_year = date('Y', time());
+     $form['appointment_from_date'] = array(
+       '#type' => 'datetime',
+-      '#title' => 'Appointment From date',
++      '#title' => $this->t('Appointment From date'),
+       '#default_value' => new DrupalDateTime('now'),
+       '#date_date_element' => 'date',
+       '#date_time_element' => 'none',
+@@ -33,7 +33,7 @@ class AppointmentCalendarForm extends FormBase {
+     );
+     $form['appointment_to_date'] = array(
+       '#type' => 'datetime',
+-      '#title' => 'Appointment To date',
++      '#title' => $this->t('Appointment To date'),
+       '#default_value' => new DrupalDateTime('now'),
+       '#date_date_element' => 'date',
+       '#date_time_element' => 'none',
+@@ -43,14 +43,14 @@ class AppointmentCalendarForm extends FormBase {
+     );
+     $form['appointment_slot'] = array(
+       '#type' => 'textfield',
+-      '#title' => 'No of Slots:',
++      '#title' => $this->t('No of Slots:'),
+       '#size' => 10,
+       '#maxlength' => 10,
+       '#required' => TRUE,
+     );
+     $form['appointment_fill'] = array(
+       '#type' => 'button',
+-      '#value' => 'Fill Slots',
++      '#value' => $this->t('Fill Slots'),
+       '#weight' => 36,
+       '#ajax' => array(
+         'callback' => '::appointment_calendar_filltime_slots_callback_form',
+diff --git a/src/Form/AppointmentCalendarListForm.php b/src/Form/AppointmentCalendarListForm.php
+index 6289c5f..0c56e4e 100644
+--- a/src/Form/AppointmentCalendarListForm.php
++++ b/src/Form/AppointmentCalendarListForm.php
+@@ -42,7 +42,7 @@ class AppointmentCalendarListForm extends FormBase {
+     }
+     $form['filter_date'] = array(
+       '#type' => 'datetime',
+-      '#title' => 'From date',
++      '#title' => t('From date'),
+       '#date_date_element' => 'date',
+       '#date_time_element' => 'none',
+       '#date_year_range' => $default_year . ':+3',
+@@ -50,7 +50,7 @@ class AppointmentCalendarListForm extends FormBase {
+     );
+     $form['filter_to_date'] = array(
+       '#type' => 'datetime',
+-      '#title' => 'To date',
++      '#title' => t('To date'),
+       '#date_date_element' => 'date',
+       '#date_time_element' => 'none',
+       '#date_year_range' => $default_year . ':+3',
+@@ -58,14 +58,14 @@ class AppointmentCalendarListForm extends FormBase {
+     );
+     $form['submit'] = array(
+       '#type' => 'submit',
+-      '#value' => 'Filter',
++      '#value' => t('Filter'),
+     );
+     $form['reset'] = array(
+       '#type' => 'submit',
+-      '#value' => 'Reset',
++      '#value' => t('Reset'),
+     );
+     // Headers.
+-    $headers = array('Date', 'No. Slots', '', '', '');
++    $headers = array(t('Date'), t('No. Slots'), t('Operations'));
+     $db_conn = \Drupal::database();
+     $date_query = $db_conn->select('appointment_date', 'ad');
+     $date_query->fields('ad');
+@@ -86,12 +86,10 @@ class AppointmentCalendarListForm extends FormBase {
+       $view = Html::escape($base_url . '/admin/appointment-calendar/view?date=' . $date->date);
+       $edit = Html::escape($base_url . '/admin/appointment-calendar/edit?date=' . $date->date);
+       $delete = Html::escape($base_url . '/admin/appointment-calendar/delete?date=' . $date->date);
+-      $row = '';
++      $row = [];
+       $row[] = date('Y-m-d', $date->date);
+       $row[] = $slots;
+-      $row[] = Markup::create('<a href="' . $view . '">View</a>');
+-      $row[] = Markup::create('<a href="' . $edit . '">Edit</a>');
+-      $row[] = Markup::create('<a href="' . $delete . '">Delete</a>');
++      $row[] = Markup::create('<div><a href="' . $view . '">' . t('View') . '</a></div><div><a href="' . $edit . '">' . t('Edit') . '</a></div><div><a href="' . $delete . '">' . t('Delete') . '</a></div>');
+       $rows[] = $row;
+     }
+     $form['data'] = array(
+diff --git a/src/Form/AppointmentCalendarViewForm.php b/src/Form/AppointmentCalendarViewForm.php
+index 70b65bf..3eceda0 100644
+--- a/src/Form/AppointmentCalendarViewForm.php
++++ b/src/Form/AppointmentCalendarViewForm.php
+@@ -2,7 +2,6 @@
+ 
+ namespace Drupal\appointment_calendar\Form;
+ 
+-use Drupal\Component\Utility\Html;
+ use Drupal\Core\Datetime\DrupalDateTime;
+ use Drupal\Core\Form\FormBase;
+ use Drupal\Core\Form\FormStateInterface;
+@@ -20,15 +19,12 @@ class AppointmentCalendarViewForm extends FormBase {
+    * {@inheritdoc}
+    */
+   public function buildForm(array $form, FormStateInterface $form_state) {
+-    global $base_url;
+-    // Default year.
+-    $default_year = date('Y', time());
+     $from_date = \Drupal::request()->query->get('date');
+     // Date edit page.
+     if ($from_date != '') {
+       $form['appointment_slot_date'] = array(
+         '#type' => 'datetime',
+-        '#title' => 'Date',
++        '#title' => $this->t('Date'),
+         '#date_date_element' => 'date',
+         '#date_time_element' => 'none',
+         '#default_value' => DrupalDateTime::createFromTimestamp($from_date),
